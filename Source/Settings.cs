@@ -287,7 +287,11 @@ public class Settings : ModSettings
         var def = allDefs.First();
         var errors = new List<string>();
 
-        if (Directory.GetFiles(Path.Combine(modPath, "Settings")).Length == 0)
+        if (!Directory.Exists(Path.Combine(modPath, "Settings")))
+        {
+            errors.Add($"No settings folder found at {Path.Combine(modPath, "Settings")}");
+        }
+        else if (Directory.GetFiles(Path.Combine(modPath, "Settings")).Length == 0)
         {
             errors.Add($"There are no config files found in {Path.Combine(modPath, "Settings")}");
         }

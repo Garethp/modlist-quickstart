@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Verse;
 
 namespace ModlistQuickstart.ModlistManager;
@@ -39,8 +40,21 @@ public class Controller
                     is not null).ToList(),
             GetModsToSubscribeTo()
         );
+    }
+    
+    private string GetModSteamId(ModMetaData mod)
+    {
+        if (mod.GetPublishedFileId().m_PublishedFileId != 0)
+        {
+            var publishedFileId = $"{mod.GetPublishedFileId()}";
+            if (mod.Source == ContentSource.SteamWorkshop && new Regex("^[0-9]+$").IsMatch(mod.FolderName)) return mod.FolderName;
+            
+            return publishedFileId;
+        }
+        
+        if (mod.Source != ContentSource.SteamWorkshop) return null;
 
-        var a = 1 + 1;
+        return mod.FolderName;
     }
 
     public void SubScribeToMissingMods()
@@ -60,8 +74,13 @@ public class Controller
     {
         var installedMods = GetInstalledMods();
         var mods = _modlist.mods
-            .Where(mod => installedMods.All(installedMod => installedMod.PackageId.ToLower() != mod.PackageId.ToLower()))
+            .Where(mod => !mod.PackageId.StartsWith("ludeon."))
+            .Where(mod => installedMods.All(installedMod => installedMod.PackageId.ToLower() != mod.PackageId.ToLower() || (
+                GetModSteamId(installedMod) != "0" && GetModSteamId(installedMod) != mod.FileId)
+            ))
             .ToList();
+        
+        mods.SortBy(mod => mod.Name);
 
         return mods;
     }

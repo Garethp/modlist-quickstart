@@ -15,7 +15,7 @@ public class ModlistQuickstart : Mod
 
     public ModlistQuickstart(ModContentPack content) : base(content)
     {
-        var modlists = EarlyModlistDefLoader.GetModlistDefs();
+        var modlists = EarlyModlistDefLoader.GetModlistDefs(this);
 
         if (modlists.Count == 1)
         {

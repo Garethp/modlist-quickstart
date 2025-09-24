@@ -3,7 +3,7 @@
     <name>ModlistQuickstart</name>
     <author>Garethp</author>
     <supportedVersions>
-        <li>1.5</li>
+        <li>1.6</li>
     </supportedVersions>
     <packageId>Garethp.ModlistQuickstart</packageId>
     <description>My Rimworld Mod</description>

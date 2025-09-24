@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using ModlistQuickstart.ModlistManager;
 using UnityEngine;
@@ -25,8 +26,24 @@ public class Settings : ModSettings
     public string AutoloadSave = "";
     public StoredConfigs CurrentlyLoadedConfigs = new();
 
-    private bool canGenerate;
+    private List<string> unpublishedMods = [];
     private bool checkedCanGenerate = false;
+    private bool errorShown = false;
+
+    private string GetModSteamId(ModContentPack mod)
+    {
+        if (mod.ModMetaData.GetPublishedFileId().m_PublishedFileId != 0)
+        {
+            var publishedFileId = $"{mod.ModMetaData.GetPublishedFileId()}";
+            if (mod.ModMetaData.Source == ContentSource.SteamWorkshop && new Regex("^[0-9]+$").IsMatch(mod.ModMetaData.FolderName)) return mod.ModMetaData.FolderName;
+            
+            return publishedFileId;
+        }
+        
+        if (mod.ModMetaData.Source != ContentSource.SteamWorkshop) return null;
+
+        return mod.ModMetaData.FolderName;
+    }
 
     public override void ExposeData()
     {
@@ -57,10 +74,14 @@ public class Settings : ModSettings
         {
             checkedCanGenerate = true;
             var thisPackageId = LoadedModManager.GetMod<ModlistQuickstart>().Content.PackageId;
-            canGenerate = LoadedModManager.RunningModsListForReading.All(mod =>
-                mod.PackageId.StartsWith("ludeon.rimworld") ||
-                mod.PackageId == thisPackageId ||
-                mod.ModMetaData.GetPublishedFileId().m_PublishedFileId != 0);
+            unpublishedMods = LoadedModManager.RunningModsListForReading.Where(
+                    mod =>
+                        !mod.PackageId.StartsWith("ludeon.rimworld") &&
+                        mod.PackageId != thisPackageId &&
+                        GetModSteamId(mod) == null
+                )
+                .Select(mod => mod.PackageId)
+                .ToList();
         }
 
         var listing = new Listing_Standard();
@@ -106,9 +127,17 @@ public class Settings : ModSettings
         listing.GapLine();
         listing.Gap();
 
-        if (!canGenerate)
+        if (unpublishedMods.Count > 0)
         {
             Widgets.Label(listing.GetRect(34f), "Not all mods have published FileId on the Steam Workshop");
+
+            if (!errorShown)
+            {
+                unpublishedMods.ForEach(id => Log.Error($"The following mod is unpublished: {id}"));
+                Log.TryOpenLogWindow();
+                errorShown = true;
+            }
+
             return;
         }
 
@@ -224,7 +253,7 @@ public class Settings : ModSettings
             if (!mod.PackageId.StartsWith("ludeon.rimworld") && mod.PackageId != thisPackageId)
             {
                 modNode.AppendChild(document.CreateElement("FileId")).InnerText =
-                    mod.ModMetaData.GetPublishedFileId().m_PublishedFileId.ToString();
+                    GetModSteamId(mod);
             }
         });
 

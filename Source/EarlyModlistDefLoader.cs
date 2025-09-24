@@ -23,21 +23,20 @@ public class EarlyModlistDefLoader
         return null;
     }
 
-    public static List<ModlistDef> GetModlistDefs()
+    public static List<ModlistDef> GetModlistDefs(Mod mod)
     {
-        var mods = LoadedModManager.RunningMods;
         List<ModlistDef> defs = new();
 
         var defClassName = new ModlistDef().GetType().FullName;
 
-        var modContentPack = LoadedModManager.GetMod<ModlistQuickstart>().Content;
+        var modContentPack = mod.Content;
 
         var presetDefs = modContentPack.LoadDefs()
             .Where(loadableAsset => GetDefsNode(loadableAsset.xmlDoc)?.FirstChild is not null)
             .Select(loadableAsset => GetDefsNode(loadableAsset.xmlDoc)?.FirstChild)
             .Where(defNode => defNode.Name == defClassName)
             .ToList();
-
+        
         foreach (var presetDef in presetDefs)
         {
             // For each `<ModlistConfigurator.ModlistPresetDef>` node, grab the defName, presetLabel and version

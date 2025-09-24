@@ -68,10 +68,6 @@ public class WorkshopController
                 SubscribeToWorkshopFile(fileId);
                 await Task.Delay(50);
             }
-        }).ContinueWith((Task _) =>
-        {
-            Log.Message("Subscription Complete");
-            Log.TryOpenLogWindow();
         }).Start();
     }
 
